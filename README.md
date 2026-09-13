@@ -1,6 +1,7 @@
 <img src="assets/logo.png" alt="promptrouter" width="300">
 
 ![ci](https://github.com/taynotfound/promptrouter/actions/workflows/ci.yml/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/taynotfound/promptrouter)](https://goreportcard.com/report/github.com/taynotfound/promptrouter)
 ![license](https://img.shields.io/badge/license-MIT-blue)
 ![go](https://img.shields.io/badge/go-1.26%2B-00ADD8)
 [![Discord](https://img.shields.io/badge/discord-support-5865F2?logo=discord&logoColor=white)](https://discord.gg/bGx9VetCC4)
