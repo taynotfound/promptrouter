@@ -1,4 +1,4 @@
-# promptrouter
+<img src="assets/logo.svg" alt="promptrouter" height="56">
 
 ![ci](https://github.com/taynotfound/promptrouter/actions/workflows/ci.yml/badge.svg)
 ![license](https://img.shields.io/badge/license-MIT-blue)
@@ -48,9 +48,26 @@ go install github.com/taynotfound/promptrouter/cmd/route@latest  # from source
 The `.deb` and `.rpm` are built on every tagged release. NixOS users can also add
 the flake as an input.
 
+Full list in [docs/prerequisites.md](docs/prerequisites.md).
+
+## Set up
+
+After installing, run the wizard. It checks your prerequisites, lists the Ollama
+models you already have, lets you pick a local model and an optional cloud
+provider, takes any API token, and writes a valid config.
+
+```bash
+route init      # interactive setup
+route doctor    # check prerequisites any time
+```
+
+Prefer to edit by hand? See [docs/configuration.md](docs/configuration.md).
+
 ## Use
 
 ```bash
+route init                                  # interactive setup wizard
+route doctor                                # check prerequisites
 route "add a null check to this parser"     # judge, route, run
 route --dry "design a billing API"          # show the decision only
 route --explain "debug this flaky test"     # show the judge reasoning
@@ -65,36 +82,22 @@ then `./models.yaml`. Override with `--config` or `PROMPTROUTER_CONFIG`.
 
 ## Configure
 
-`models.yaml` is the whole product. Tiers map to ordered engine chains:
+`models.yaml` is the whole product: tiers map to ordered engine chains, and
+routing tries each engine top to bottom until one answers.
 
 ```yaml
-judge:
-  model: qwen2.5:7b-instruct
-
 tiers:
-  EASY:
-    chain:
-      - engine: ollama
-        model: qwen3-coder:30b
   HARD:
     chain:
-      - engine: hermes
-        model: claude-sonnet-5
-      - engine: ollama        # fallback if the cloud call fails
+      - engine: openrouter     # cloud first for the harder work
+        model: anthropic/claude-3.5-sonnet
+      - engine: ollama         # local fallback if the cloud call fails
         model: qwen3-coder:30b
-
-defaults:
-  fallback_tier: HARD          # used when the judge is unsure
-  ollama_url: "http://localhost:11434"
-  max_retries: 1               # retry an engine on an empty or transient failure
-  log_file: "~/.promptrouter/routes.jsonl"
 ```
 
-Engines:
-
-- `ollama` local models over the Ollama HTTP API. Free.
-- `hermes` cloud models through the `hermes -z` CLI.
-- `openrouter` cloud models over the OpenRouter API (`OPENROUTER_API_KEY`).
+Engines: `ollama` (local, free), `openrouter` (cloud, one API key), `hermes`
+(cloud, via the hermes CLI). Full reference with tunables and secrets handling
+in [docs/configuration.md](docs/configuration.md).
 
 ## Measuring the savings
 

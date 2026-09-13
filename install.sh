@@ -46,17 +46,15 @@ else
 fi
 install -m 0755 "$tmp/$BIN" "$dest/$BIN"
 
-# drop a default config if none exists
-cfg="$HOME/.config/promptrouter/models.yaml"
-if [ ! -f "$cfg" ]; then
-  mkdir -p "$(dirname "$cfg")"
-  cp "$tmp/models.yaml" "$cfg" 2>/dev/null || true
-  echo "wrote default config to $cfg"
-fi
-
 echo "installed $BIN to $dest"
 case ":$PATH:" in
   *":$dest:"*) ;;
   *) echo "note: add $dest to your PATH" ;;
 esac
-echo "try: $BIN --explain \"rename a variable\""
+
+echo
+echo "next step: run the setup wizard to pick your models and tokens:"
+echo "  $BIN init"
+echo
+echo "or check prerequisites first:"
+echo "  $BIN doctor"
