@@ -56,6 +56,54 @@ defaults:
   log_file: "~/.promptrouter/routes.jsonl"
 ```
 
+## Score mode: your own levels and thresholds
+
+Tier mode is three fixed buckets. Score mode lets the judge emit a 0-100
+difficulty score and hands the task to a level *you* define. Set
+`judge.mode: score` and list `levels` instead of `tiers`.
+
+```yaml
+judge:
+  model: qwen2.5:7b-instruct
+  mode: score
+
+levels:
+  - name: local          # 0-39
+    min_score: 0
+    chain:
+      - engine: ollama
+        model: qwen3-coder:30b
+  - name: mid            # 40-74
+    min_score: 40
+    chain:
+      - engine: openrouter
+        model: anthropic/claude-3.5-sonnet
+      - engine: ollama
+        model: qwen3-coder:30b
+  - name: expert         # 75-100
+    min_score: 75
+    chain:
+      - engine: hermes
+        model: claude-opus-4.8
+
+defaults:
+  ollama_url: "http://localhost:11434"
+  log_file: "~/.promptrouter/routes.jsonl"
+```
+
+Rules:
+
+- The highest level whose `min_score` the score clears wins. A score below every
+  threshold falls to the lowest level, so routing always resolves.
+- Give the first level `min_score: 0`. Thresholds must be unique and in 0-100.
+- Any number of levels, one to ten. Two is fine (local vs cloud); more gives you
+  finer control over where money starts being spent.
+- Each level has its own engine chain with its own fallbacks, exactly like tiers.
+
+Force a decision to test a level: `route --score 90 "..."`, or by level name
+with `route --tier expert "..."`. Measure how your judge scores your tasks with
+`route bench` (see [benchmarks.md](benchmarks.md)).
+
 ## Engines
 
 | Engine | Where it runs | Auth |
