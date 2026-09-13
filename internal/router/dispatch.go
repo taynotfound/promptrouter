@@ -20,6 +20,7 @@ type Attempt struct {
 type Result struct {
 	Task    string    `json:"task"`
 	Tier    string    `json:"tier"`
+	Score   int       `json:"score,omitempty"`
 	Engine  string    `json:"engine"`
 	Model   string    `json:"model"`
 	Text    string    `json:"text"`
@@ -31,22 +32,27 @@ type Result struct {
 
 // Summary is a one line header for terminal output.
 func (r *Result) Summary() string {
-	icon := map[string]string{"EASY": "[EASY]", "HARD": "[HARD]", "EXPERT": "[EXPERT]"}[r.Tier]
-	if r.OK {
-		return fmt.Sprintf("%s %s/%s  %.1fs", icon, r.Engine, r.Model, r.Seconds)
+	label := "[" + r.Tier + "]"
+	if r.Score > 0 || strings.Contains(r.Tier, " ") {
+		label = fmt.Sprintf("[%s %d]", r.Tier, r.Score)
 	}
-	return fmt.Sprintf("%s failed: %s", icon, r.Err)
+	if r.OK {
+		return fmt.Sprintf("%s %s/%s  %.1fs", label, r.Engine, r.Model, r.Seconds)
+	}
+	return fmt.Sprintf("%s failed: %s", label, r.Err)
 }
 
 // Options tweak a single dispatch.
 type Options struct {
 	ForceTier   string
 	ForceEngine string
+	ForceScore  int // -1 means "not forced"
 }
 
-// Dispatch judges the task (unless a tier is forced), then walks the tier's
-// fallback chain until an engine answers. Each engine gets MaxRetries tries
-// for empty or transient failures before moving on.
+// Dispatch judges the task (unless a tier or score is forced), resolves it to
+// an engine chain (via user-defined levels in score mode, or named tiers
+// otherwise), then walks that chain until an engine answers. Each engine gets
+// MaxRetries tries for empty or transient failures before moving on.
 func (c *Config) Dispatch(task string, opt Options) *Result {
 	start := time.Now()
 	task = strings.TrimSpace(task)
@@ -56,16 +62,38 @@ func (c *Config) Dispatch(task string, opt Options) *Result {
 		return res
 	}
 
-	tier := strings.ToUpper(opt.ForceTier)
-	if tier == "" {
-		tier = c.Judge(task)
+	var chain []Engine
+	if c.ScoreMode() {
+		score := opt.ForceScore
+		if score < 0 {
+			if opt.ForceTier != "" {
+				// Allow forcing by level name in score mode.
+				for _, l := range c.Levels {
+					if strings.EqualFold(l.Name, opt.ForceTier) {
+						score = l.MinScore
+					}
+				}
+			}
+			if score < 0 {
+				score = c.JudgeScore(task)
+			}
+		}
+		lvl := c.LevelFor(score)
+		res.Score = score
+		res.Tier = lvl.Name
+		chain = lvl.Chain
+	} else {
+		tier := strings.ToUpper(opt.ForceTier)
+		if tier == "" {
+			tier = c.Judge(task)
+		}
+		if !validTiers[tier] {
+			tier = c.Defaults.FallbackTier
+		}
+		res.Tier = tier
+		chain = c.Tiers[tier].Chain
 	}
-	if !validTiers[tier] {
-		tier = c.Defaults.FallbackTier
-	}
-	res.Tier = tier
 
-	chain := c.Tiers[tier].Chain
 	for _, e := range chain {
 		if opt.ForceEngine != "" && e.Kind != opt.ForceEngine {
 			continue
@@ -141,6 +169,7 @@ func (c *Config) logRoute(r *Result) {
 	entry := map[string]any{
 		"ts":      time.Now().UTC().Format(time.RFC3339),
 		"tier":    r.Tier,
+		"score":   r.Score,
 		"engine":  r.Engine,
 		"model":   r.Model,
 		"ok":      r.OK,
