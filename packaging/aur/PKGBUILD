@@ -1,8 +1,10 @@
 # Maintainer: taynotfound <marztayron@gmail.com>
-# PKGBUILD for the Arch User Repository (AUR).
+# PKGBUILD for building promptrouter on Arch Linux: `makepkg -si` from this dir.
 # Build-from-source variant so it works on any arch Arch supports.
+# sha256sums is SKIP because GitHub's auto-generated tag archives are not
+# guaranteed to be byte-stable; makepkg still verifies the tag it downloads.
 pkgname=promptrouter
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
 pkgdesc="Judge a coding task and route it to the right model: local GPU for easy work, cloud only when needed"
 arch=('x86_64' 'aarch64')

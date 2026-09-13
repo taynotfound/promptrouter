@@ -46,7 +46,7 @@ curl -fsSL https://raw.githubusercontent.com/taynotfound/promptrouter/main/insta
 Per distro:
 
 ```bash
-yay -S promptrouter                                    # Arch (AUR)
+cd packaging/aur && makepkg -si                       # Arch (build from the shipped PKGBUILD)
 sudo dpkg -i promptrouter_*_amd64.deb                  # Debian, Ubuntu
 sudo rpm -i promptrouter_*_amd64.rpm                   # Fedora, RHEL
 nix run github:taynotfound/promptrouter -- --version   # NixOS
