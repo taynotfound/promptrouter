@@ -132,6 +132,18 @@ per-engine fields point it at the right place:
 holds the key, so several `openai` engines can each use their own token. A local
 server (a `base_url` on `localhost` or `127.0.0.1`) needs no key at all.
 
+If every `openai` engine points at the same provider, set it once under
+`defaults` instead of on each engine:
+
+```yaml
+defaults:
+  openai_base_url: "https://api.groq.com/openai/v1"
+  openai_key_env: GROQ_API_KEY
+```
+
+Every `openai` engine inherits these. A per-engine `base_url` or `key_env` still
+overrides the global default for that one engine.
+
 ## Seeing where your tasks go
 
 Set `log_file` and every route appends one JSON line. Summarize it:

@@ -48,6 +48,12 @@ type Defaults struct {
 	RequestTimeout int     `yaml:"request_timeout"`
 	AnswerTemp     float64 `yaml:"answer_temperature"`
 	LogFile        string  `yaml:"log_file"`
+	// OpenAIBaseURL and OpenAIKeyEnv are global defaults for every openai
+	// engine that does not set its own base_url or key_env. Point them once at
+	// a provider (Groq, Together, a local vLLM server) and every openai engine
+	// inherits it; a per-engine value still wins over these.
+	OpenAIBaseURL string `yaml:"openai_base_url"`
+	OpenAIKeyEnv  string `yaml:"openai_key_env"`
 }
 
 // Judge is the fast classifier config. Mode is "tier" (categorical, the

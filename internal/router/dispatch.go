@@ -153,11 +153,21 @@ func (c *Config) runEngine(e Engine, task string) (string, error) {
 	case "openai":
 		base := e.BaseURL
 		if base == "" {
+			base = c.Defaults.OpenAIBaseURL
+		}
+		if base == "" {
 			base = "https://api.openai.com/v1"
 		}
-		key := engineKey(e, "OPENAI_API_KEY")
+		keyEnv := e.KeyEnv
+		if keyEnv == "" {
+			keyEnv = c.Defaults.OpenAIKeyEnv
+		}
+		if keyEnv == "" {
+			keyEnv = "OPENAI_API_KEY"
+		}
+		key := os.Getenv(keyEnv)
 		if key == "" && !strings.Contains(base, "localhost") && !strings.Contains(base, "127.0.0.1") {
-			return "", fmt.Errorf("openai: no API key (set %s or key_env)", defaultKeyEnv(e, "OPENAI_API_KEY"))
+			return "", fmt.Errorf("openai: no API key (set %s or key_env)", keyEnv)
 		}
 		return openAICompatChat("openai", base, key, e.Model, task, c.Defaults.AnswerTemp, c.Defaults.RequestTimeout)
 	case "anthropic":
