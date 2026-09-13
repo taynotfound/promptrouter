@@ -1,0 +1,38 @@
+name: Config / routing help
+description: Your routing is not behaving the way you want and you need help tuning it.
+title: "[help] "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For back-and-forth troubleshooting, [Discord](https://discord.gg/bGx9VetCC4) is usually quicker. Use this form if you would rather have it tracked.
+  - type: textarea
+    id: goal
+    attributes:
+      label: What you want to happen
+      placeholder: I want everything under score 80 to stay local and only 80+ to go to Claude.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happens instead
+      description: Include `route --explain "your task"` output, which shows the score/tier and reason.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Your models.yaml
+      render: yaml
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: route 0.2.0
+    validations:
+      required: false

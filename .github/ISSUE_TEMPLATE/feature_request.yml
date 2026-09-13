@@ -1,0 +1,39 @@
+name: Feature request
+description: Suggest a new capability or an improvement.
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do that promptrouter makes hard or impossible today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like
+      description: Describe the feature. If it touches routing, say how it should interact with levels or tiers.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - "routing / levels"
+        - "judge"
+        - "engines (ollama, openrouter, hermes)"
+        - "wizard (route init)"
+        - "benchmarks (route bench)"
+        - "packaging / install"
+        - "other"
+    validations:
+      required: true

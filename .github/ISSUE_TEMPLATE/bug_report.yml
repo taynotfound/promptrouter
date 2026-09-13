@@ -1,0 +1,73 @@
+name: Bug report
+description: Something routes wrong, crashes, or behaves unexpectedly.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Fill in what you can. For quick questions, [Discord](https://discord.gg/bGx9VetCC4) is often faster.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you run, and what went wrong?
+      placeholder: I ran `route "..."` and it routed to the cloud when it should have stayed local.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      placeholder: The task is trivial, so it should have run on Ollama.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: The exact command(s). Include `--explain` or `--json` output if you have it.
+      render: shell
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Routing mode
+      options:
+        - "score"
+        - "tiers"
+        - "not sure"
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant models.yaml
+      description: Paste the levels/tiers section. Redact any API keys (they live in secrets.env, not here, but check anyway).
+      render: yaml
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `route --version`.
+      placeholder: route 0.2.0
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS and hardware
+      placeholder: NixOS, RTX 2070 8GB
+    validations:
+      required: false
+  - type: textarea
+    id: doctor
+    attributes:
+      label: route doctor output
+      description: Helps rule out environment issues.
+      render: shell
+    validations:
+      required: false
