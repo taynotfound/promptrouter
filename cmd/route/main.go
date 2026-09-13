@@ -18,6 +18,8 @@ const usage = `route: judge a coding task and send it to the right model.
 
 Usage:
   route [flags] "your task"
+  route init          Interactive setup: pick models, tokens, write config.
+  route doctor [url]  Check prerequisites (Ollama, network, hermes).
 
 Flags:
   --dry           Judge only, show which model would run.
@@ -35,6 +37,19 @@ func main() {
 }
 
 func run(args []string) int {
+	// Subcommands come before flag parsing.
+	if len(args) > 0 {
+		switch args[0] {
+		case "init":
+			return runInit(args[1:])
+		case "doctor":
+			return runDoctor(args[1:])
+		}
+	}
+
+	// Provider tokens from the secrets file, if present.
+	router.LoadSecrets()
+
 	var (
 		dry, explain, jsonOut, stats bool
 		tier, engine, configPath     string

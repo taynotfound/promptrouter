@@ -12,6 +12,15 @@ import (
 	"time"
 )
 
+// decodeJSON reads all of r and unmarshals it into v.
+func decodeJSON(r io.Reader, v any) error {
+	raw, err := io.ReadAll(r)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(raw, v)
+}
+
 // ollamaChat calls a local Ollama model via the chat API. Uses the chat
 // endpoint (not generate) because some coder models early-stop on generate.
 func ollamaChat(model, system, user, baseURL string, numPredict int, temp float64, timeoutSec int) (string, error) {
