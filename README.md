@@ -23,10 +23,10 @@ would use hermes/claude-opus-4.8
 
 ## How it works
 
-1. A small local model (default `qwen2.5:7b-instruct`) rates the task in about 0.3s.
-2. That rating selects a level, and each level is an ordered chain of engines.
+1. A small local model (default `qwen2.5:7b-instruct`) scores the task, warm in about 0.3s.
+2. That score selects a level, and each level is an ordered chain of engines.
    Routing tries the first engine and falls back to the next on failure.
-3. Easy work stays local and free. Hard work goes to the cloud model you chose.
+3. Work below your threshold stays local with no cloud bill. Work above it goes to the cloud model you chose.
 
 Two ways to rate a task, both configured in `models.yaml`:
 
