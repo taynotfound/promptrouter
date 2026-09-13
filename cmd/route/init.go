@@ -79,25 +79,37 @@ func runInit(args []string) int {
 
 	// 5. Cloud provider (optional), tier mode.
 	fmt.Println("\nCloud engine for HARD and EXPERT tasks (optional):")
-	fmt.Println("  1) none      local only, fully free and private")
-	fmt.Println("  2) openrouter   any cloud model, one API key")
-	fmt.Println("  3) hermes    github-copilot models via the hermes CLI")
+	fmt.Println("  1) none        local only, fully free and private")
+	fmt.Println("  2) openai      OpenAI or any OpenAI-compatible API (Groq, Together, vLLM, ...)")
+	fmt.Println("  3) anthropic   Claude models, Anthropic API key")
+	fmt.Println("  4) openrouter  any cloud model behind one OpenRouter key")
+	fmt.Println("  5) hermes      github-copilot models via the hermes CLI")
 	cloudChoice := ask(in, "Pick", "1")
 
 	switch strings.TrimSpace(cloudChoice) {
-	case "2", "openrouter":
+	case "2", "openai":
+		plan.CloudEngine = "openai"
+		plan.CloudHard = ask(in, "OpenAI model for HARD", "gpt-4o-mini")
+		plan.CloudExpert = ask(in, "OpenAI model for EXPERT", "gpt-4o")
+		base := ask(in, "API base URL (blank for OpenAI; set for Groq/Together/vLLM/etc.)", "")
+		plan.CloudBaseURL = base
+		keyEnv := "OPENAI_API_KEY"
+		if base != "" {
+			keyEnv = ask(in, "Env var that holds the API key", "OPENAI_API_KEY")
+		}
+		plan.CloudKeyEnv = keyEnv
+		saveKey(in, keyEnv, "API key (leave blank to set later)")
+	case "3", "anthropic":
+		plan.CloudEngine = "anthropic"
+		plan.CloudHard = ask(in, "Claude model for HARD", "claude-3-5-sonnet-latest")
+		plan.CloudExpert = ask(in, "Claude model for EXPERT", "claude-opus-4-20250514")
+		saveKey(in, "ANTHROPIC_API_KEY", "Anthropic API key (leave blank to set later)")
+	case "4", "openrouter":
 		plan.CloudEngine = "openrouter"
 		plan.CloudHard = ask(in, "OpenRouter model for HARD", "anthropic/claude-3.5-sonnet")
 		plan.CloudExpert = ask(in, "OpenRouter model for EXPERT", "anthropic/claude-3-opus")
-		key := askSecret(in, "OpenRouter API key (leave blank to set later)")
-		if key != "" {
-			if err := router.WriteSecret("OPENROUTER_API_KEY", key); err != nil {
-				fmt.Println("  could not save key:", err)
-			} else {
-				fmt.Println("  saved to", router.SecretsPath())
-			}
-		}
-	case "3", "hermes":
+		saveKey(in, "OPENROUTER_API_KEY", "OpenRouter API key (leave blank to set later)")
+	case "5", "hermes":
 		plan.CloudEngine = "hermes"
 		plan.CloudHard = ask(in, "hermes model for HARD", "claude-sonnet-5")
 		plan.CloudExpert = ask(in, "hermes model for EXPERT", "claude-opus-4.8")
@@ -107,6 +119,24 @@ func runInit(args []string) int {
 	}
 
 	return writePlan(in, plan)
+}
+
+// saveKey prompts for a secret and writes it to the secrets file under keyEnv,
+// unless the value is already present. Blank input is left for the user to set
+// later. Used by both the tier and score wizards.
+func saveKey(in *bufio.Reader, keyEnv, prompt string) {
+	if router.SecretValue(keyEnv) != "" {
+		return
+	}
+	key := askSecret(in, "  "+prompt)
+	if key == "" {
+		return
+	}
+	if err := router.WriteSecret(keyEnv, key); err != nil {
+		fmt.Println("  could not save key:", err)
+		return
+	}
+	fmt.Println("  saved to", router.SecretsPath())
 }
 
 // buildScorePlan drives the score-mode level builder: the user names each level,
@@ -148,35 +178,44 @@ func buildScorePlan(in *bufio.Reader, plan *router.Plan, models []string) int {
 
 		fmt.Println("  engine for this level:")
 		fmt.Println("    1) ollama      local, free")
-		fmt.Println("    2) hermes      github-copilot via hermes CLI")
-		fmt.Println("    3) openrouter  cloud via API key")
-		var kind, model string
+		fmt.Println("    2) openai      OpenAI or any OpenAI-compatible API")
+		fmt.Println("    3) anthropic   Claude via Anthropic API key")
+		fmt.Println("    4) openrouter  cloud via OpenRouter key")
+		fmt.Println("    5) hermes      github-copilot via hermes CLI")
+		var eng router.Engine
 		switch strings.TrimSpace(ask(in, "  Pick", "1")) {
-		case "2", "hermes":
-			kind = "hermes"
-			model = ask(in, "  hermes model", "claude-sonnet-5")
-		case "3", "openrouter":
-			kind = "openrouter"
-			model = ask(in, "  OpenRouter model", "anthropic/claude-3.5-sonnet")
-			if router.SecretValue("OPENROUTER_API_KEY") == "" {
-				key := askSecret(in, "  OpenRouter API key (leave blank to set later)")
-				if key != "" {
-					if err := router.WriteSecret("OPENROUTER_API_KEY", key); err == nil {
-						fmt.Println("    saved to", router.SecretsPath())
-					}
-				}
+		case "2", "openai":
+			eng.Kind = "openai"
+			eng.Model = ask(in, "  OpenAI model", "gpt-4o-mini")
+			base := ask(in, "  API base URL (blank for OpenAI; set for Groq/Together/vLLM/etc.)", "")
+			eng.BaseURL = base
+			eng.KeyEnv = "OPENAI_API_KEY"
+			if base != "" {
+				eng.KeyEnv = ask(in, "  Env var that holds the API key", "OPENAI_API_KEY")
 			}
+			saveKey(in, eng.KeyEnv, "API key (leave blank to set later)")
+		case "3", "anthropic":
+			eng.Kind = "anthropic"
+			eng.Model = ask(in, "  Claude model", "claude-3-5-sonnet-latest")
+			saveKey(in, "ANTHROPIC_API_KEY", "Anthropic API key (leave blank to set later)")
+		case "4", "openrouter":
+			eng.Kind = "openrouter"
+			eng.Model = ask(in, "  OpenRouter model", "anthropic/claude-3.5-sonnet")
+			saveKey(in, "OPENROUTER_API_KEY", "OpenRouter API key (leave blank to set later)")
+		case "5", "hermes":
+			eng.Kind = "hermes"
+			eng.Model = ask(in, "  hermes model", "claude-sonnet-5")
 		default:
-			kind = "ollama"
+			eng.Kind = "ollama"
 			def := plan.LocalModel
 			if len(models) > 0 && def == "" {
 				def = models[0]
 			}
-			model = ask(in, "  ollama model", def)
+			eng.Model = ask(in, "  ollama model", def)
 		}
 
-		spec := router.LevelSpec{Name: name, MinScore: min, Chain: []router.Engine{{Kind: kind, Model: model}}}
-		if kind != "ollama" && plan.LocalModel != "" {
+		spec := router.LevelSpec{Name: name, MinScore: min, Chain: []router.Engine{eng}}
+		if eng.Kind != "ollama" && plan.LocalModel != "" {
 			if confirm(in, "  Add a local ollama fallback if this engine fails?", true) {
 				spec.Chain = append(spec.Chain, router.Engine{Kind: "ollama", Model: plan.LocalModel})
 			}

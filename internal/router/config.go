@@ -11,8 +11,15 @@ import (
 
 // Engine is one backend in a tier's fallback chain.
 type Engine struct {
-	Kind  string `yaml:"engine"` // ollama, hermes, openrouter
+	Kind  string `yaml:"engine"` // ollama, hermes, openrouter, openai, anthropic
 	Model string `yaml:"model"`
+	// BaseURL overrides the API root for the openai kind, so one engine type
+	// covers OpenAI, Groq, Together, DeepSeek, a local vLLM or LM Studio
+	// server, and any other OpenAI-compatible API. Ignored by other kinds.
+	BaseURL string `yaml:"base_url,omitempty"`
+	// KeyEnv overrides which environment variable holds the API key. Defaults
+	// per kind (OPENAI_API_KEY, ANTHROPIC_API_KEY, OPENROUTER_API_KEY).
+	KeyEnv string `yaml:"key_env,omitempty"`
 }
 
 // Tier is an ordered list of engines. First reachable one wins.
@@ -64,7 +71,7 @@ func (c *Config) ScoreMode() bool {
 	return strings.EqualFold(c.JudgeCfg.Mode, "score") && len(c.Levels) > 0
 }
 
-var validKinds = map[string]bool{"ollama": true, "hermes": true, "openrouter": true}
+var validKinds = map[string]bool{"ollama": true, "hermes": true, "openrouter": true, "openai": true, "anthropic": true}
 
 // Load reads and validates a config file. A bad file fails here with a clear
 // message instead of a nil-map panic deep in a route.

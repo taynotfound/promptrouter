@@ -17,13 +17,15 @@ func DefaultConfigPath() string {
 
 // Plan is the user's answers from the wizard, turned into a config file.
 type Plan struct {
-	JudgeModel  string
-	LocalModel  string // ollama model for the EASY tier and local fallback
-	CloudEngine string // "hermes", "openrouter", or "" for none
-	CloudHard   string // cloud model for HARD
-	CloudExpert string // cloud model for EXPERT
-	OllamaURL   string
-	LogFile     string
+	JudgeModel   string
+	LocalModel   string // ollama model for the EASY tier and local fallback
+	CloudEngine  string // "openai", "anthropic", "openrouter", "hermes", or "" for none
+	CloudHard    string // cloud model for HARD
+	CloudExpert  string // cloud model for EXPERT
+	CloudBaseURL string // openai kind: API root override (Groq, Together, vLLM, ...)
+	CloudKeyEnv  string // openai kind: env var holding the API key
+	OllamaURL    string
+	LogFile      string
 
 	// Score mode (optional). When Levels is non-empty, Render writes a
 	// score-based config instead of the categorical EASY/HARD/EXPERT tiers.
@@ -55,7 +57,7 @@ func (p Plan) RenderScore() string {
 		fmt.Fprintf(&b, "    min_score: %d\n", l.MinScore)
 		b.WriteString("    chain:\n")
 		for _, e := range l.Chain {
-			b.WriteString("      - engine: " + e.Kind + "\n        model: " + e.Model + "\n")
+			writeEngine(&b, e)
 		}
 	}
 	b.WriteString("\n")
@@ -87,23 +89,30 @@ func (p Plan) Render() string {
 
 	b.WriteString("tiers:\n")
 
+	local := Engine{Kind: "ollama", Model: p.LocalModel}
+	cloudHard := Engine{Kind: p.CloudEngine, Model: p.CloudHard, BaseURL: p.CloudBaseURL, KeyEnv: p.CloudKeyEnv}
+	cloudExpert := Engine{Kind: p.CloudEngine, Model: p.CloudExpert, BaseURL: p.CloudBaseURL, KeyEnv: p.CloudKeyEnv}
+
 	// EASY: always local.
 	b.WriteString("  EASY:\n    chain:\n")
-	b.WriteString("      - engine: ollama\n        model: " + p.LocalModel + "\n\n")
+	writeEngine(&b, local)
+	b.WriteString("\n")
 
 	// HARD: cloud first (if chosen), local fallback.
 	b.WriteString("  HARD:\n    chain:\n")
 	if p.CloudEngine != "" && p.CloudHard != "" {
-		b.WriteString("      - engine: " + p.CloudEngine + "\n        model: " + p.CloudHard + "\n")
+		writeEngine(&b, cloudHard)
 	}
-	b.WriteString("      - engine: ollama\n        model: " + p.LocalModel + "\n\n")
+	writeEngine(&b, local)
+	b.WriteString("\n")
 
 	// EXPERT: cloud first (if chosen), local fallback.
 	b.WriteString("  EXPERT:\n    chain:\n")
 	if p.CloudEngine != "" && p.CloudExpert != "" {
-		b.WriteString("      - engine: " + p.CloudEngine + "\n        model: " + p.CloudExpert + "\n")
+		writeEngine(&b, cloudExpert)
 	}
-	b.WriteString("      - engine: ollama\n        model: " + p.LocalModel + "\n\n")
+	writeEngine(&b, local)
+	b.WriteString("\n")
 
 	b.WriteString("defaults:\n")
 	b.WriteString("  fallback_tier: HARD\n")
@@ -116,6 +125,18 @@ func (p Plan) Render() string {
 		b.WriteString("  log_file: \"\"\n")
 	}
 	return b.String()
+}
+
+// writeEngine emits one chain entry, including base_url and key_env when set,
+// so generated configs round-trip the full Engine shape.
+func writeEngine(b *strings.Builder, e Engine) {
+	b.WriteString("      - engine: " + e.Kind + "\n        model: " + e.Model + "\n")
+	if e.BaseURL != "" {
+		b.WriteString("        base_url: \"" + e.BaseURL + "\"\n")
+	}
+	if e.KeyEnv != "" {
+		b.WriteString("        key_env: " + e.KeyEnv + "\n")
+	}
 }
 
 // Save writes the rendered config to path, creating parent dirs.

@@ -109,8 +109,28 @@ with `route --tier expert "..."`. Measure how your judge scores your tasks with
 | Engine | Where it runs | Auth |
 | --- | --- | --- |
 | `ollama` | local | none |
+| `openai` | cloud or self-hosted; OpenAI and any OpenAI-compatible API | `OPENAI_API_KEY` by default, or a per-engine `key_env`; none needed for a local server |
+| `anthropic` | cloud | `ANTHROPIC_API_KEY` (from `secrets.env` or env) |
 | `openrouter` | cloud | `OPENROUTER_API_KEY` (from `secrets.env` or env) |
 | `hermes` | cloud, via the hermes CLI | your existing hermes login |
+
+### The `openai` engine covers most providers
+
+The `openai` kind speaks the standard `/chat/completions` protocol, so a single
+engine type reaches OpenAI, Groq, Together, DeepSeek, Fireworks, a local vLLM or
+LM Studio server, and anything else that implements the same API. Two optional
+per-engine fields point it at the right place:
+
+```yaml
+- engine: openai
+  model: llama-3.3-70b-versatile
+  base_url: "https://api.groq.com/openai/v1"   # omit for OpenAI itself
+  key_env: GROQ_API_KEY                          # omit to use OPENAI_API_KEY
+```
+
+`base_url` sets the API root; `key_env` names the environment variable that
+holds the key, so several `openai` engines can each use their own token. A local
+server (a `base_url` on `localhost` or `127.0.0.1`) needs no key at all.
 
 ## Seeing where your tasks go
 

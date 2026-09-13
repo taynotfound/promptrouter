@@ -149,10 +149,38 @@ func (c *Config) runEngine(e Engine, task string) (string, error) {
 	case "hermes":
 		return runHermes(task, e.Model, c.Defaults.HermesTimeout)
 	case "openrouter":
-		return openRouterChat(task, e.Model, os.Getenv("OPENROUTER_API_KEY"), c.Defaults.AnswerTemp, c.Defaults.RequestTimeout)
+		return openRouterChat(task, e.Model, engineKey(e, "OPENROUTER_API_KEY"), c.Defaults.AnswerTemp, c.Defaults.RequestTimeout)
+	case "openai":
+		base := e.BaseURL
+		if base == "" {
+			base = "https://api.openai.com/v1"
+		}
+		key := engineKey(e, "OPENAI_API_KEY")
+		if key == "" && !strings.Contains(base, "localhost") && !strings.Contains(base, "127.0.0.1") {
+			return "", fmt.Errorf("openai: no API key (set %s or key_env)", defaultKeyEnv(e, "OPENAI_API_KEY"))
+		}
+		return openAICompatChat("openai", base, key, e.Model, task, c.Defaults.AnswerTemp, c.Defaults.RequestTimeout)
+	case "anthropic":
+		return anthropicChat(task, e.Model, engineKey(e, "ANTHROPIC_API_KEY"), c.Defaults.AnswerTemp, c.Defaults.RequestTimeout)
 	default:
 		return "", fmt.Errorf("unknown engine %q", e.Kind)
 	}
+}
+
+// defaultKeyEnv returns the env var name an engine draws its key from: the
+// engine's key_env override if set, otherwise the kind's default.
+func defaultKeyEnv(e Engine, fallback string) string {
+	if e.KeyEnv != "" {
+		return e.KeyEnv
+	}
+	return fallback
+}
+
+// engineKey reads the API key for an engine from the environment, honoring a
+// per-engine key_env override so several providers of the same kind can each
+// use their own variable.
+func engineKey(e Engine, fallback string) string {
+	return os.Getenv(defaultKeyEnv(e, fallback))
 }
 
 func (c *Config) logRoute(r *Result) {
