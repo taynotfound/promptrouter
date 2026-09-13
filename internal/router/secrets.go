@@ -47,6 +47,28 @@ func LoadSecrets() {
 	}
 }
 
+// SecretValue returns the value of a key from the environment or the secrets
+// file, or "" if unset. Used by the wizard to avoid re-prompting for a token
+// that is already stored.
+func SecretValue(key string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	f, err := os.Open(SecretsPath())
+	if err != nil {
+		return ""
+	}
+	defer f.Close()
+	s := bufio.NewScanner(f)
+	for s.Scan() {
+		line := strings.TrimSpace(s.Text())
+		if k, v, ok := strings.Cut(line, "="); ok && strings.TrimSpace(k) == key {
+			return strings.Trim(strings.TrimSpace(v), `"'`)
+		}
+	}
+	return ""
+}
+
 // WriteSecret sets or replaces a single KEY in the secrets file, creating it
 // with 0600 permissions. It preserves other keys and comments.
 func WriteSecret(key, value string) error {
