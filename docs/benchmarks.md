@@ -39,17 +39,17 @@ Every judge was warmed once before timing so model-load time is excluded.
 | Judge model            | Size  | Accuracy | Judge avg | Notes                         |
 |------------------------|-------|----------|-----------|-------------------------------|
 | qwen2.5:0.5b-instruct  | 0.5B  | 60%      | ~0.8s     | cold; unreliable HARD/EXPERT  |
-| llama3.2:1b            | 1B    | 33%      | 0.44s     | too small, misroutes badly    |
-| qwen2.5:1.5b-instruct  | 1.5B  | 60%      | 0.53s     | weak on HARD                  |
+| llama3.2:1b            | 1B    | 33%      | 0.34s     | too small, misroutes badly    |
+| qwen2.5:1.5b-instruct  | 1.5B  | 60%      | 0.26s     | weak on HARD                  |
 | gemma2:2b              | 2B    | 53%      | 0.59s     | weak on HARD                  |
-| qwen2.5:3b-instruct    | 3B    | 67%      | 0.26s     | collapses on HARD (1/5)       |
-| **qwen2.5:7b-instruct**| 7B    | **93%**  | 0.28s     | **recommended default**       |
+| qwen2.5:3b-instruct    | 3B    | 67%      | 0.28s     | collapses on HARD (1/5)       |
+| **qwen2.5:7b-instruct**| 7B    | **93%**  | 0.32s     | **recommended default**       |
 
 ## The smallest-judge question, answered honestly
 
 The intuition is "use the smallest model so judging is instant." On this GPU
-that intuition does not hold. Warm, the 3B judge (0.26s) and the 7B judge
-(0.28s) are within noise of each other on latency, because the floor is
+that intuition does not hold. Warm, the 3B judge (0.28s) and the 7B judge
+(0.32s) are within noise of each other on latency, because the floor is
 per-call inference warmup, not parameter count. But accuracy falls off a cliff
 below 7B: the 3B judge gets only 1 of 5 HARD tasks right, and the 1B model is
 worse than guessing.
@@ -77,8 +77,8 @@ Same judge (qwen2.5:7b-instruct), same set:
 
 | Mode  | Accuracy | Judge avg |
 |-------|----------|-----------|
-| score | 93%      | 0.28s     |
-| tiers | 87%      | 0.29s     |
+| score | 93%      | 0.32s     |
+| tiers | 80%      | 0.28s     |
 
 Score mode edged out categorical tiers here because the numeric prompt gives the
 judge a finer target and the EASY/HARD/EXPERT bands are derived from the score.

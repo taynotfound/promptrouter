@@ -156,10 +156,10 @@ On the author's RTX 2070, built-in 15-task set:
 
 | Judge model            | Accuracy | Judge avg | Note                     |
 |------------------------|----------|-----------|--------------------------|
-| **qwen2.5:7b-instruct**| **93%**  | 0.28s     | recommended default      |
-| qwen2.5:3b-instruct    | 67%      | 0.26s     | weak on hard tasks       |
-| qwen2.5:1.5b-instruct  | 60%      | 0.53s     | only if 7b is too slow   |
-| llama3.2:1b            | 33%      | 0.44s     | worse than guessing      |
+| **qwen2.5:7b-instruct**| **93%**  | 0.32s     | recommended default      |
+| qwen2.5:3b-instruct    | 67%      | 0.28s     | weak on hard tasks       |
+| qwen2.5:1.5b-instruct  | 60%      | 0.26s     | no faster, less accurate |
+| llama3.2:1b            | 33%      | 0.34s     | worse than guessing      |
 
 Going below 7B buys almost no speed on this GPU (the floor is inference warmup,
 not model size) while accuracy falls off a cliff. So the recommended judge is the
@@ -186,7 +186,9 @@ Full methodology and hardware details in [docs/benchmarks.md](docs/benchmarks.md
 
 ## Measuring your own savings
 
-Turn on `log_file` and use `route` for real work. Then:
+Turn on `log_file` and use `route` for real work. Then `route --stats` prints
+your own split (illustrative shape below; the actual local share depends on your
+tasks and thresholds):
 
 ```
 $ route --stats
