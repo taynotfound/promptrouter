@@ -1,0 +1,61 @@
+version: 2
+
+project_name: promptrouter
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: route
+    main: ./cmd/route
+    binary: route
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    files:
+      - README.md
+      - LICENSE
+      - models.yaml
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+# Native packages for Debian/Ubuntu (.deb), Fedora/RHEL (.rpm), Alpine (.apk).
+# Arch users get the binary via the AUR PKGBUILD in packaging/aur.
+nfpms:
+  - id: packages
+    package_name: promptrouter
+    vendor: taynotfound
+    homepage: https://github.com/taynotfound/promptrouter
+    maintainer: taynotfound <marztayron@gmail.com>
+    description: |
+      Judge a coding task and route it to the right model. Local GPU for the
+      easy 80 percent, cloud only when the task actually needs it.
+    license: MIT
+    formats: [deb, rpm, apk]
+    bindir: /usr/bin
+    contents:
+      - src: models.yaml
+        dst: /etc/promptrouter/models.yaml
+        type: config|noreplace
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  draft: false
+  prerelease: auto

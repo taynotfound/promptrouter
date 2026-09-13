@@ -1,0 +1,13 @@
+# build output
+/route
+/result
+/dist/
+
+# local python venv from the old prototype, not tracked
+/.venv/
+
+# routing log
+*.jsonl
+
+# editor
+.DS_Store

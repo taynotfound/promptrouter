@@ -1,0 +1,126 @@
+package router
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"os/exec"
+	"strings"
+	"time"
+)
+
+// ollamaChat calls a local Ollama model via the chat API. Uses the chat
+// endpoint (not generate) because some coder models early-stop on generate.
+func ollamaChat(model, system, user, baseURL string, numPredict int, temp float64, timeoutSec int) (string, error) {
+	body := map[string]any{
+		"model":  model,
+		"stream": false,
+		"messages": []map[string]string{
+			{"role": "system", "content": system},
+			{"role": "user", "content": user},
+		},
+		"options": map[string]any{
+			"temperature": temp,
+			"num_predict": numPredict,
+		},
+	}
+	raw, err := postJSON(baseURL+"/api/chat", body, timeoutSec)
+	if err != nil {
+		return "", err
+	}
+	var out struct {
+		Message struct {
+			Content string `json:"content"`
+		} `json:"message"`
+		Error string `json:"error"`
+	}
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return "", fmt.Errorf("ollama: bad response: %w", err)
+	}
+	if out.Error != "" {
+		return "", fmt.Errorf("ollama: %s", out.Error)
+	}
+	return strings.TrimSpace(out.Message.Content), nil
+}
+
+// runHermes shells out to the hermes headless CLI for a cloud model.
+func runHermes(task, model string, timeoutSec int) (string, error) {
+	if model == "" {
+		return "", fmt.Errorf("hermes: model is required")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSec)*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "hermes", "-z", task, "-m", model, "--provider", "github-copilot")
+	var out, errb bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &errb
+	if err := cmd.Run(); err != nil {
+		msg := strings.TrimSpace(errb.String())
+		if msg == "" {
+			msg = err.Error()
+		}
+		return "", fmt.Errorf("hermes: %s", msg)
+	}
+	return strings.TrimSpace(out.String()), nil
+}
+
+// openRouterChat calls the OpenRouter chat completions API.
+func openRouterChat(task, model, apiKey string, temp float64, timeoutSec int) (string, error) {
+	if apiKey == "" {
+		return "", fmt.Errorf("openrouter: OPENROUTER_API_KEY not set")
+	}
+	body := map[string]any{
+		"model":       model,
+		"temperature": temp,
+		"messages":    []map[string]string{{"role": "user", "content": task}},
+	}
+	buf, _ := json.Marshal(body)
+	req, _ := http.NewRequest("POST", "https://openrouter.ai/api/v1/chat/completions", bytes.NewReader(buf))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	client := &http.Client{Timeout: time.Duration(timeoutSec) * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("openrouter: %w", err)
+	}
+	defer resp.Body.Close()
+	raw, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("openrouter: HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(raw)))
+	}
+	var out struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return "", fmt.Errorf("openrouter: bad response: %w", err)
+	}
+	if len(out.Choices) == 0 {
+		return "", fmt.Errorf("openrouter: empty response")
+	}
+	return strings.TrimSpace(out.Choices[0].Message.Content), nil
+}
+
+func postJSON(url string, body any, timeoutSec int) ([]byte, error) {
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	client := &http.Client{Timeout: time.Duration(timeoutSec) * time.Second}
+	resp, err := client.Post(url, "application/json", bytes.NewReader(buf))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	raw, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("HTTP %d from %s: %s", resp.StatusCode, url, strings.TrimSpace(string(raw)))
+	}
+	return raw, nil
+}

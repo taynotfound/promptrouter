@@ -1,0 +1,39 @@
+# promptrouter model registry.
+#
+# A task is judged into a tier, then routed down that tier's chain until an
+# engine answers. Engines: ollama (local, free), hermes (cloud via hermes -z),
+# openrouter (cloud via API key). Edit freely, nothing is hardcoded.
+
+judge:
+  model: qwen2.5:7b-instruct
+
+tiers:
+  EASY:
+    chain:
+      - engine: ollama
+        model: qwen3-coder:30b
+      - engine: ollama
+        model: qwen2.5-coder:7b
+  HARD:
+    chain:
+      - engine: hermes
+        model: claude-sonnet-5
+      - engine: ollama
+        model: qwen3-coder:30b
+  EXPERT:
+    chain:
+      - engine: hermes
+        model: claude-opus-4.8
+      - engine: hermes
+        model: claude-sonnet-5
+
+defaults:
+  fallback_tier: HARD
+  ollama_url: "http://localhost:11434"
+  max_retries: 1
+  retry_backoff: 1.0
+  ollama_timeout: 600
+  hermes_timeout: 600
+  request_timeout: 600
+  answer_temperature: 0.2
+  log_file: "~/.promptrouter/routes.jsonl"
