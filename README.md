@@ -1,8 +1,7 @@
 <img src="assets/logo.png" alt="promptrouter" width="300">
 
 ![ci](https://github.com/taynotfound/promptrouter/actions/workflows/ci.yml/badge.svg)
-[![Go Report Card](https://goreportcard.com/badge/github.com/taynotfound/promptrouter)](https://goreportcard.com/report/github.com/taynotfound/promptrouter)
-![license](https://img.shields.io/badge/license-MIT-blue)
+[![license: PolyForm NC](https://img.shields.io/badge/license-PolyForm%20Noncommercial-2ea44f)](LICENSE)
 ![go](https://img.shields.io/badge/go-1.26%2B-00ADD8)
 [![Discord](https://img.shields.io/badge/discord-support-5865F2?logo=discord&logoColor=white)](https://discord.gg/bGx9VetCC4)
 
@@ -136,16 +135,20 @@ tiers:
         model: qwen3-coder:30b
 ```
 
-Engines: `ollama` (local, free), `openrouter` (cloud, one API key), `hermes`
-(cloud, via the hermes CLI). Full reference with tunables and secrets handling in
+Engines: `ollama` (local, free), `openai` (OpenAI or any OpenAI-compatible API
+such as Groq, Together, DeepSeek, or a local vLLM/LM Studio server, via one API
+key and an optional `base_url`), `anthropic` (Claude, one API key), `openrouter`
+(cloud, one API key), and `hermes` (github-copilot models via the hermes CLI).
+Full reference with tunables and secrets handling in
 [docs/configuration.md](docs/configuration.md).
 
 ## Does it actually route? Yes.
 
 Routing is real, not a mock. The dispatcher calls Ollama's `/api/chat` for local
-models, shells out to the `hermes` CLI, and POSTs to the OpenRouter API. Each
-engine in a chain is tried in order until one answers. You can watch it happen
-with `route --json`, which shows every engine attempted.
+models, POSTs to OpenAI-compatible and Anthropic APIs for cloud models, shells
+out to the `hermes` CLI, and hits the OpenRouter API. Each engine in a chain is
+tried in order until one answers. You can watch it happen with `route --json`,
+which shows every engine attempted.
 
 ## Benchmarks
 
@@ -229,4 +232,8 @@ using one of the forms, or come chat in [Discord](https://discord.gg/bGx9VetCC4)
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+PolyForm Noncommercial License 1.0.0. See [LICENSE](LICENSE).
+
+Free to use, run, modify, and share for any noncommercial purpose. Commercial use
+or sale is not granted. Copyright 2026 Tay März; the copyright notice must be
+retained in copies and derivatives. No pricing, ever.
