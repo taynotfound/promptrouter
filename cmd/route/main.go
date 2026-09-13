@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/taynotfound/promptrouter/internal/router"
@@ -20,11 +21,13 @@ Usage:
   route [flags] "your task"
   route init          Interactive setup: pick models, tokens, write config.
   route doctor [url]  Check prerequisites (Ollama, network, hermes).
+  route bench [flags] Measure judge accuracy and latency on a labeled task set.
 
 Flags:
   --dry           Judge only, show which model would run.
-  --explain       Judge only, show the reason for the tier.
-  --tier T        Force a tier (EASY, HARD, EXPERT).
+  --explain       Judge only, show the reason for the tier or score.
+  --tier T        Force a tier or level name (skips the judge).
+  --score N       Force a difficulty score 0-100 (score mode; skips the judge).
   --engine E      Force an engine within the tier (ollama, hermes, openrouter).
   --json          Machine readable output.
   --config PATH   Path to models.yaml (default: search standard locations).
@@ -44,6 +47,8 @@ func run(args []string) int {
 			return runInit(args[1:])
 		case "doctor":
 			return runDoctor(args[1:])
+		case "bench":
+			return runBench(args[1:])
 		}
 	}
 
@@ -53,6 +58,7 @@ func run(args []string) int {
 	var (
 		dry, explain, jsonOut, stats bool
 		tier, engine, configPath     string
+		forceScore                   = -1
 		words                        []string
 	)
 	for i := 0; i < len(args); i++ {
@@ -76,6 +82,13 @@ func run(args []string) int {
 			i++
 			if i < len(args) {
 				tier = strings.ToUpper(args[i])
+			}
+		case a == "--score":
+			i++
+			if i < len(args) {
+				if n, err := strconv.Atoi(strings.TrimSpace(args[i])); err == nil {
+					forceScore = n
+				}
 			}
 		case a == "--engine":
 			i++
@@ -123,6 +136,22 @@ func run(args []string) int {
 	}
 
 	if explain {
+		if cfg.ScoreMode() {
+			score, why := cfg.JudgeScoreExplain(task)
+			if forceScore >= 0 {
+				score = forceScore
+			}
+			lvl := cfg.LevelFor(score)
+			first := lvl.Chain[0]
+			if jsonOut {
+				b, _ := json.Marshal(map[string]any{"score": score, "level": lvl.Name, "why": why, "engine": first.Kind, "model": first.Model})
+				fmt.Println(string(b))
+			} else {
+				fmt.Printf("[judge] score %d -> %s  %s\n", score, lvl.Name, why)
+				fmt.Printf("would use %s/%s\n", first.Kind, first.Model)
+			}
+			return 0
+		}
 		t, why := cfg.JudgeExplain(task)
 		first := cfg.Tiers[t].Chain[0]
 		if jsonOut {
@@ -136,6 +165,22 @@ func run(args []string) int {
 	}
 
 	if dry {
+		if cfg.ScoreMode() {
+			score := forceScore
+			if score < 0 {
+				score = cfg.JudgeScore(task)
+			}
+			lvl := cfg.LevelFor(score)
+			first := lvl.Chain[0]
+			if jsonOut {
+				b, _ := json.Marshal(map[string]any{"score": score, "level": lvl.Name, "engine": first.Kind, "model": first.Model})
+				fmt.Println(string(b))
+			} else {
+				fmt.Printf("[judge] score %d -> %s: %s\n", score, lvl.Name, truncate(task, 60))
+				fmt.Printf("would use %s/%s\n", first.Kind, first.Model)
+			}
+			return 0
+		}
 		t := tier
 		if t == "" {
 			t = cfg.Judge(task)
@@ -151,7 +196,7 @@ func run(args []string) int {
 		return 0
 	}
 
-	res := cfg.Dispatch(task, router.Options{ForceTier: tier, ForceEngine: engine})
+	res := cfg.Dispatch(task, router.Options{ForceTier: tier, ForceEngine: engine, ForceScore: forceScore})
 	if jsonOut {
 		b, _ := json.MarshalIndent(res, "", "  ")
 		fmt.Println(string(b))
