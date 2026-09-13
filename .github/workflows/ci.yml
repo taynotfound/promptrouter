@@ -18,6 +18,10 @@ jobs:
         run: test -z "$(gofmt -l cmd internal)" || (gofmt -l cmd internal && exit 1)
       - name: vet
         run: go vet ./cmd/... ./internal/...
+      - name: staticcheck
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@latest
+          staticcheck ./cmd/... ./internal/...
       - name: test
         run: go test ./cmd/... ./internal/...
         env:
