@@ -1,24 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="300" height="96" viewBox="0 0 300 96" fill="none" shape-rendering="crispEdges" role="img" aria-label="promptrouter">
-<!-- clean pixel routing fork, 12px grid, two colors, no strays -->
-<g transform="translate(6,0)">
-<rect x="0" y="42" width="12" height="12" fill="#A78BFA"/>
-<rect x="12" y="42" width="12" height="12" fill="#A78BFA"/>
-<rect x="0" y="54" width="12" height="12" fill="#A78BFA"/>
-<rect x="12" y="54" width="12" height="12" fill="#A78BFA"/>
-<rect x="24" y="42" width="12" height="12" fill="#A78BFA"/>
-<rect x="36" y="30" width="12" height="12" fill="#A78BFA"/>
-<rect x="48" y="18" width="12" height="12" fill="#A78BFA"/>
-<rect x="60" y="6"  width="12" height="12" fill="#A78BFA"/>
-<rect x="72" y="6"  width="12" height="12" fill="#A78BFA"/>
-<rect x="60" y="18" width="12" height="12" fill="#A78BFA"/>
-<rect x="72" y="18" width="12" height="12" fill="#A78BFA"/>
-<rect x="24" y="54" width="12" height="12" fill="#7B6E96"/>
-<rect x="36" y="66" width="12" height="12" fill="#7B6E96"/>
-<rect x="48" y="78" width="12" height="12" fill="#7B6E96"/>
-<rect x="60" y="78" width="12" height="12" fill="#7B6E96"/>
-<rect x="72" y="78" width="12" height="12" fill="#7B6E96"/>
-<rect x="60" y="66" width="12" height="12" fill="#7B6E96"/>
-<rect x="72" y="66" width="12" height="12" fill="#7B6E96"/>
-</g>
-<text x="98" y="60" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="30" font-weight="700" letter-spacing="-1"><tspan fill="#F2EBFF">prompt</tspan><tspan fill="#A78BFA">router</tspan></text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 150" fill="none" role="img" aria-label="promptrouter">
+  <!-- cursor / origin -->
+  <rect x="60" y="63" width="14" height="24" rx="3" fill="#64748B"/>
+  <line x1="74" y1="75" x2="150" y2="75" stroke="#64748B" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="150" cy="75" r="6" fill="#64748B"/>
+  <!-- local branch: green line to node -->
+  <line x1="150" y1="75" x2="195" y2="40" stroke="#22C55E" stroke-width="8" stroke-linecap="round"/>
+  <rect x="192" y="25" width="26" height="26" rx="6" fill="#22C55E"/>
+  <!-- fallback branch: dotted to cloud -->
+  <line x1="150" y1="75" x2="193" y2="110" stroke="#94A3B8" stroke-width="8" stroke-linecap="round" stroke-dasharray="1 8"/>
+  <ellipse cx="207" cy="115" rx="17" ry="8" fill="#94A3B8"/>
+  <circle cx="196" cy="108" r="8" fill="#94A3B8"/>
+  <circle cx="208" cy="104" r="10" fill="#94A3B8"/>
+  <circle cx="220" cy="109" r="7" fill="#94A3B8"/>
+  <!-- wordmark -->
+  <text x="270" y="89" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="42" font-weight="500"><tspan fill="#64748B">prompt</tspan><tspan fill="#22C55E">router</tspan></text>
 </svg>

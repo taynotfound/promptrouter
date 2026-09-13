@@ -1,8 +1,9 @@
-<img src="assets/logo.svg" alt="promptrouter" height="56">
+<img src="assets/logo.png" alt="promptrouter" width="300">
 
 ![ci](https://github.com/taynotfound/promptrouter/actions/workflows/ci.yml/badge.svg)
 ![license](https://img.shields.io/badge/license-MIT-blue)
 ![go](https://img.shields.io/badge/go-1.26%2B-00ADD8)
+[![Discord](https://img.shields.io/badge/discord-support-5865F2?logo=discord&logoColor=white)](https://discord.gg/bGx9VetCC4)
 
 Stop paying cloud prices for `rename this variable`.
 
@@ -217,6 +218,11 @@ There are good routers out there. This one is the local-first, self-hosted corne
 
 Point it at any local model through Ollama and any cloud model through OpenRouter
 or hermes. The judge decides per task; you decide the thresholds.
+
+## Support
+
+Questions, bug reports, or want to show off your routing config? Open an issue
+using one of the forms, or come chat in [Discord](https://discord.gg/bGx9VetCC4).
 
 ## License
 
